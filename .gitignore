@@ -1,0 +1,41 @@
+# ── Python cache ──────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# ── Virtual environments ───────────────────────────────
+venv/
+env/
+.venv/
+.env/
+
+# ── Model weights (too large for GitHub) ──────────────
+*.h5
+*.npy
+*.pb
+saved_model/
+
+# ── Training data & logs ──────────────────────────────
+MP_Data/
+Logs/
+training_history.png
+
+# ── IDE & OS files ────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+.DS_Store
+
+# ── Flask session / secret ────────────────────────────
+*.secret
+instance/
+
+# ── Jupyter notebooks (if any) ────────────────────────
+.ipynb_checkpoints/
+
+# ── Build artifacts ───────────────────────────────────
+dist/
+build/
+*.egg-info/

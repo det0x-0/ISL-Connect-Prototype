@@ -1,0 +1,24 @@
+# ISL-Connect — Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Core ML & Vision
+tensorflow>=2.10.0
+mediapipe>=0.10.0
+opencv-python>=4.7.0
+numpy>=1.23.0
+scikit-learn>=1.2.0
+
+# Web App
+flask>=2.3.0
+flask-cors>=4.0.0
+
+# Text-to-Speech (desktop app)
+pyttsx3>=2.90
+
+# Visualisation (training script)
+matplotlib>=3.7.0
+
+# Optional — NLP sentence correction (improves web app output)
+# Uncomment the lines below to enable the flan-t5-small corrector:
+# transformers>=4.35.0
+# sentencepiece>=0.1.99
