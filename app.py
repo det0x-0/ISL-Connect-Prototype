@@ -1,8 +1,3 @@
-"""
-ASLBridge — app.py  (Laptop Camera Edition)
-Fixes: stability logic, cooldown spam prevention, live threshold.
-"""
-
 import os, cv2, json, time, threading, queue, urllib.request, urllib.parse
 import numpy as np
 import mediapipe as mp
@@ -13,23 +8,19 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout, BatchNormalization
 
 app = Flask(__name__, template_folder=".")
-app.secret_key = os.environ.get("SECRET_KEY", "aslbridge-2024")
+app.secret_key = os.environ.get("SECRET_KEY", "signbridge-2024")
 CORS(app)
 
-# ---------------------------------------------------------------------------
-# Constants  — tuned for real use
-# ---------------------------------------------------------------------------
 actions          = np.array(['hello', 'my', 'name', 'thanks', 'A', 'S', 'H', 'I', 'Q'])
 SPELLING_LETTERS = {'A', 'S', 'H', 'I', 'Q'}
 SEQUENCE_LENGTH  = 30
-STABILITY_FRAMES = 6       # ← was 10; 6 consecutive matching frames is enough
-COOLDOWN_SECONDS = 2.5     # ← was 1.5; prevent same word repeating for 2.5s
+STABILITY_FRAMES = 6
+COOLDOWN_SECONDS = 2.5
 CAMERA_INDEX     = 0
 JPEG_QUALITY     = 70
 
-# Live-adjustable threshold (POST /set_threshold to change without restart)
 _threshold_lock = threading.Lock()
-_threshold      = 0.70     # default — UI slider can change this
+_threshold      = 0.70
 
 def get_threshold():
     with _threshold_lock: return _threshold
@@ -40,15 +31,12 @@ def set_threshold(v):
         _threshold = max(0.10, min(0.99, float(v)))
     print(f"[THRESH] Updated to {_threshold:.2f}")
 
-# ---------------------------------------------------------------------------
-# Optional NLP
-# ---------------------------------------------------------------------------
 corrector = None
 try:
     from transformers import pipeline as hf_pipeline
     print("[NLP] Loading flan-t5-small …")
     corrector = hf_pipeline("text2text-generation", model="google/flan-t5-small")
-    print("[NLP] ✅ Ready")
+    print("[NLP] Ready")
 except Exception as e:
     print(f"[NLP] Skipped ({e}). pip install transformers sentencepiece")
 
@@ -56,7 +44,7 @@ def fix_sentence(raw_words):
     if not raw_words: return ""
     if not corrector:  return " ".join(raw_words)
     try:
-        prompt = f"Fix this ASL gloss into natural English sentence: {' '.join(raw_words)}"
+        prompt = f"Fix this sign language gloss into natural English sentence: {' '.join(raw_words)}"
         return corrector(prompt, max_new_tokens=60)[0]["generated_text"].strip()
     except Exception:
         return " ".join(raw_words)
@@ -85,24 +73,18 @@ def trigger_nlp(words, engine):
     try: _nlp_queue.put_nowait((list(words), engine))
     except queue.Full: pass
 
-# ---------------------------------------------------------------------------
-# Translation (MyMemory — no API key)
-# ---------------------------------------------------------------------------
 def translate_text(text, target_lang):
     if not text or target_lang == "en": return text
     try:
         params = urllib.parse.urlencode({"q": text, "langpair": f"en|{target_lang}"})
         req = urllib.request.Request(
             f"https://api.mymemory.translated.net/get?{params}",
-            headers={"User-Agent": "ASLBridge/1.0"})
+            headers={"User-Agent": "SignBridge/1.0"})
         with urllib.request.urlopen(req, timeout=5) as resp:
             return json.loads(resp.read().decode())["responseData"]["translatedText"]
     except Exception as e:
         print(f"[TRANSLATE] {e}"); return text
 
-# ---------------------------------------------------------------------------
-# LSTM model
-# ---------------------------------------------------------------------------
 model = Sequential([
     LSTM(64, return_sequences=True, activation='tanh', input_shape=(30, 258)),
     BatchNormalization(), Dropout(0.3),
@@ -116,17 +98,14 @@ model = Sequential([
 ])
 try:
     model.load_weights('asl_model_filteredaugment.h5')
-    print("✅ Weights loaded from .h5")
+    print("Weights loaded from .h5")
 except Exception:
     try:
         model.set_weights(list(np.load('asl_weights_filteredaugment.npy', allow_pickle=True)))
-        print("✅ Weights loaded from .npy")
+        print("Weights loaded from .npy")
     except Exception as e:
-        print(f"❌ Could not load weights: {e}")
+        print(f"Could not load weights: {e}")
 
-# ---------------------------------------------------------------------------
-# MediaPipe
-# ---------------------------------------------------------------------------
 mp_holistic    = mp.solutions.holistic
 mp_drawing     = mp.solutions.drawing_utils
 mp_draw_styles = mp.solutions.drawing_styles
@@ -157,9 +136,7 @@ def draw_skeleton_only(results, shape=(480, 640)):
             mp_drawing.DrawingSpec(color=(40,80,160), thickness=1))
     return canvas
 
-# ---------------------------------------------------------------------------
-# CameraEngine
-# ---------------------------------------------------------------------------
+
 class CameraEngine:
     def __init__(self):
         self.latest_video_jpeg    = None
@@ -172,7 +149,7 @@ class CameraEngine:
         self.sequence     = deque(maxlen=SEQUENCE_LENGTH)
         self.predictions  = deque(maxlen=STABILITY_FRAMES)
         self.last_word    = None
-        self.last_word_t  = 0.0   # timestamp of last confirmed word
+        self.last_word_t  = 0.0
         self.current_word = ""
         self.sentence     = []
         self.history      = []
@@ -291,36 +268,27 @@ class CameraEngine:
                 idx        = int(np.argmax(raw))
                 confidence = float(raw[idx])
 
-                # ── FIX 1: label exists if confidence >= threshold ─────────
                 live_label = actions[idx] if confidence >= thresh else None
 
                 top3_idx = np.argsort(raw)[-3:][::-1]
                 top3 = [{"label": str(actions[i]), "conf": round(float(raw[i]),3)} for i in top3_idx]
 
-                # ── FIX 2: stability buffer tracks the raw label (None counts) ─
-                # We only append to predictions when we have a label above threshold
                 if live_label is not None:
                     self.predictions.append(live_label)
                 else:
-                    # Below threshold — reset buffer so it must earn stability fresh
                     self.predictions.clear()
 
-                # ── FIX 3: confirm only when buffer full AND all same ──────
                 now = time.time()
                 if (len(self.predictions) == STABILITY_FRAMES
                         and all(p == live_label for p in self.predictions)
                         and live_label is not None):
 
-                    # ── FIX 4: cooldown is purely TIME-based, not word-based ─
-                    # Same word: must wait full COOLDOWN_SECONDS before repeating
-                    # Different word: can confirm immediately
                     time_since_last = now - self.last_word_t
                     same_word = (live_label == self.last_word)
 
                     if not same_word or time_since_last >= COOLDOWN_SECONDS:
                         self.last_word   = live_label
                         self.last_word_t = now
-                        # Clear buffer so the same sign doesn't instantly re-trigger
                         self.predictions.clear()
 
                         if live_label in SPELLING_LETTERS:
@@ -337,9 +305,8 @@ class CameraEngine:
                         self.history.append(entry)
                         if len(self.history) > 50: self.history.pop(0)
                         trigger_nlp(list(self.sentence), self)
-                        print(f"[PREDICT] ✅ {live_label} ({int(confidence*100)}%)")
+                        print(f"[DETECT] {live_label} ({int(confidence*100)}%)")
 
-            # Overlay
             label_txt = f"{live_label}  {int(confidence*100)}%" if live_label else "..."
             cv2.rectangle(frame, (0,0), (460,42), (0,0,0), -1)
             cv2.putText(frame, label_txt, (8,30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,229,200), 2)
@@ -378,10 +345,6 @@ class CameraEngine:
 
 engine = CameraEngine()
 engine.start()
-
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
 
 @app.route("/")
 def index():
@@ -456,7 +419,7 @@ def translate():
 
 @app.route("/export_txt")
 def export_txt():
-    lines = ["ASLBridge Session Transcript",
+    lines = ["SignBridge Session Transcript",
              f"Exported: {time.strftime('%Y-%m-%d %H:%M:%S')}","="*40,""]
     for e in engine.history:
         lines.append(f"[{e['time']}] {e['word']}")
@@ -464,7 +427,7 @@ def export_txt():
         elif e.get("raw"):     lines.append(f"        ~ {e['raw']}")
         lines.append("")
     return Response("\n".join(lines), mimetype="text/plain",
-                    headers={"Content-Disposition":"attachment; filename=aslbridge_transcript.txt"})
+                    headers={"Content-Disposition":"attachment; filename=signbridge_transcript.txt"})
 
 @app.route("/camera_status")
 def camera_status():

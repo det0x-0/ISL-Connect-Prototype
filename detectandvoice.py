@@ -6,20 +6,17 @@ import threading
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout, BatchNormalization
 
-# --- 1. TEXT-TO-SPEECH SETUP ---
 def speak_text(text):
-    """Function to speak in a separate thread to prevent camera lag"""
     def run_speech():
         engine = pyttsx3.init()
         voices = engine.getProperty('voices')
-        engine.setProperty('voice', voices[0].id) # Male voice
+        engine.setProperty('voice', voices[0].id)
         engine.setProperty('rate', 150)
         engine.say(text)
         engine.runAndWait()
     
     threading.Thread(target=run_speech, daemon=True).start()
 
-# --- 2. KEYPOINT EXTRACTION ---
 def extract_keypoints(results):
     pose = np.array([[res.x, res.y, res.z, res.visibility] 
                      for res in results.pose_landmarks.landmark]).flatten() \
@@ -32,7 +29,6 @@ def extract_keypoints(results):
          if results.right_hand_landmarks else np.zeros(21*3)
     return np.concatenate([pose, lh, rh])
 
-# --- 3. MODEL ARCHITECTURE ---
 actions = np.array(['hello', 'my', 'name', 'thanks', 'A', 'S', 'H', 'I', 'Q'])
 
 model = Sequential([
@@ -52,18 +48,16 @@ model = Sequential([
 
 try:
     model.load_weights('asl_model_filteredaugment.h5') 
-    print("✅ Weights loaded successfully.")
+    print("Weights loaded successfully.")
 except:
-    # Fallback for .npy weights
     weights_data = np.load('asl_weights_filteredaugment.npy', allow_pickle=True)
     model.set_weights(list(weights_data))
-    print("✅ Weights loaded from .npy successfully.")
+    print("Weights loaded from .npy successfully.")
 
-# --- 4. VARIABLES & CONFIGURATION ---
 sequence = []
 sentence = []
 predictions = []
-current_spelling = [] # Buffer for individual letters
+current_spelling = []
 spelling_letters = ['A', 'S', 'H', 'I', 'Q']
 
 threshold = 0.7 
@@ -85,7 +79,6 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
         image.flags.writeable = True
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-        # Drawing landmarks
         mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_holistic.POSE_CONNECTIONS)
         mp_drawing.draw_landmarks(image, results.left_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
         mp_drawing.draw_landmarks(image, results.right_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
@@ -107,22 +100,18 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
                     if confidence > threshold and cooldown_counter == 0:
                         detected_action = actions[predicted_idx]
                         
-                        # --- LOGIC: HANDLE SPELLING vs WORDS ---
                         if detected_action in spelling_letters:
-                            # Add to spelling buffer if it's new
                             if not current_spelling or detected_action != current_spelling[-1]:
                                 current_spelling.append(detected_action)
-                                cooldown_counter = 30 # Slower cooldown for letters
+                                cooldown_counter = 30
                                 
-                                # Trigger word completion on 'Q' or 5 letters
                                 if detected_action == 'Q' or len(current_spelling) >= 5:
                                     full_word = "".join(current_spelling)
                                     sentence.append(full_word)
-                                    speak_text(full_word) # Says "ASHIQ"
-                                    current_spelling = [] # Reset buffer
+                                    speak_text(full_word)
+                                    current_spelling = []
                         
                         else:
-                            # Handle full words (hello, my, name, etc)
                             if not sentence or detected_action != sentence[-1]:
                                 sentence.append(detected_action)
                                 speak_text(detected_action)
@@ -130,8 +119,6 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
 
         if cooldown_counter > 0: cooldown_counter -= 1
 
-        # --- UI DISPLAY ---
-        # Show spelling buffer in brackets next to the main sentence
         spelling_preview = "".join(current_spelling)
         ui_text = " ".join(sentence).upper()
         if spelling_preview: ui_text += f" ({spelling_preview})"
@@ -140,12 +127,11 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
         cv2.putText(image, ui_text, (15, 32), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
         
-        cv2.imshow('ASL Detection', image)
+        cv2.imshow('Sign Language Detection', image)
         
-        # KEYBOARD SHORTCUTS
         key = cv2.waitKey(10) & 0xFF
         if key == ord('q'): break
-        if key == ord('c'): # Press 'C' to clear
+        if key == ord('c'):
             sentence = []
             current_spelling = []
 

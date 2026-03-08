@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-    <title>ASLBridge — Sign ↔ Speak</title>
+    <title>SignBridge — Sign ↔ Speak</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link
         href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;600&display=swap"
@@ -46,7 +46,6 @@
             overflow: hidden;
         }
 
-        /* Scanline effect */
         body::after {
             content: '';
             position: fixed;
@@ -56,7 +55,6 @@
             background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, .06) 2px, rgba(0, 0, 0, .06) 4px);
         }
 
-        /* ── LAYOUT ─────────────────────────────────────────────── */
         .app {
             display: flex;
             flex-direction: column;
@@ -101,7 +99,6 @@
             flex-shrink: 0;
         }
 
-        /* ── TABS ───────────────────────────────────────────────── */
         .tabs {
             flex-shrink: 0;
             display: flex;
@@ -137,7 +134,6 @@
             background: var(--surface2);
         }
 
-        /* ── PANELS ─────────────────────────────────────────────── */
         .panels {
             flex: 1;
             overflow: hidden;
@@ -154,15 +150,11 @@
             display: flex;
         }
 
-        /* ══════════════════════════════════════════════════════════
-       MODE 1 — Sign → Text
-    ══════════════════════════════════════════════════════════ */
         #mode1 {
             flex-direction: row;
             gap: 0;
         }
 
-        /* LEFT: camera / skeleton */
         .cam-col {
             flex: 1;
             display: flex;
@@ -196,7 +188,6 @@
             pointer-events: none;
         }
 
-        /* HUD overlay */
         .hud {
             position: absolute;
             inset: 0;
@@ -255,7 +246,6 @@
             color: var(--dim);
         }
 
-        /* sentence overlay */
         .sentence-overlay {
             position: absolute;
             bottom: 0;
@@ -299,7 +289,6 @@
             }
         }
 
-        /* RIGHT: stats panel */
         .stats-col {
             width: 220px;
             flex-shrink: 0;
@@ -324,14 +313,12 @@
             margin-bottom: 8px;
         }
 
-        /* Confidence wave */
         #conf-wave {
             display: block;
             width: 100%;
             height: 44px;
         }
 
-        /* Top-3 bars */
         .top3-row {
             display: flex;
             flex-direction: column;
@@ -387,7 +374,6 @@
             background: var(--dim);
         }
 
-        /* Corrected sentence */
         .corrected-box {
             font-family: var(--sans);
             font-size: .82rem;
@@ -404,7 +390,6 @@
             font-family: var(--mono);
         }
 
-        /* History list */
         .history-list {
             flex: 1;
             overflow-y: auto;
@@ -448,7 +433,6 @@
             border-radius: 2px;
         }
 
-        /* ctrl bar */
         .ctrl-bar {
             flex-shrink: 0;
             display: flex;
@@ -510,7 +494,6 @@
             letter-spacing: .12em;
         }
 
-        /* connection status */
         .conn-pill {
             display: flex;
             align-items: center;
@@ -542,9 +525,6 @@
             background: var(--accent2);
         }
 
-        /* ══════════════════════════════════════════════════════════
-       MODE 2 — Text → Sign
-    ══════════════════════════════════════════════════════════ */
         #mode2 {
             padding: 16px 14px;
             gap: 14px;
@@ -707,7 +687,6 @@
             background: var(--dim);
         }
 
-        /* NLP processing indicator */
         .nlp-status {
             font-family: var(--mono);
             font-size: .58rem;
@@ -738,7 +717,6 @@
             color: var(--accent);
         }
 
-        /* ── TOAST ───────────────────────────────────────────────── */
         #toast {
             position: fixed;
             bottom: 16px;
@@ -766,7 +744,6 @@
             border-left-color: var(--accent2);
         }
 
-        /* ── RESPONSIVE ──────────────────────────────────────────── */
         @media (max-width: 560px) {
             .stats-col {
                 display: none;
@@ -783,7 +760,7 @@
     <div class="app">
 
         <header>
-            <div class="logo">ASL<em>Bridge</em></div>
+            <div class="logo">Sign<em>Bridge</em></div>
             <div class="hdr-center"></div>
             <div class="hdr-right">
                 <div class="conn-pill">
@@ -800,10 +777,8 @@
 
         <div class="panels">
 
-            <!-- ═══ MODE 1 ═══ -->
             <div class="panel active" id="mode1">
 
-                <!-- Camera / Skeleton column -->
                 <div class="cam-col">
                     <div class="feed-wrap">
                         <img id="video-feed" class="feed-img" src="/video_feed" alt="Video" />
@@ -831,16 +806,13 @@
                     </div>
                 </div>
 
-                <!-- Stats column -->
                 <div class="stats-col">
 
-                    <!-- Confidence wave -->
                     <div class="stats-section">
                         <div class="stats-lbl">Confidence Wave</div>
                         <canvas id="conf-wave"></canvas>
                     </div>
 
-                    <!-- Top-3 -->
                     <div class="stats-section">
                         <div class="stats-lbl">Top Predictions</div>
                         <div class="top3-row" id="top3-row">
@@ -868,7 +840,6 @@
                         </div>
                     </div>
 
-                    <!-- NLP corrected sentence -->
                     <div class="stats-section">
                         <div class="stats-lbl">Smart Sentence</div>
                         <div class="corrected-box" id="corrected-box">
@@ -880,19 +851,17 @@
                         </div>
                     </div>
 
-                    <!-- History -->
                     <div class="stats-section" style="padding-bottom:4px; border-bottom:none;">
                         <div class="stats-lbl">History</div>
                     </div>
                     <div class="history-list" id="history-list"></div>
 
                 </div>
-            </div><!-- /mode1 -->
+            </div>
 
-            <!-- ═══ MODE 2 ═══ -->
             <div class="panel" id="mode2">
                 <div>
-                    <div class="lbl">Type a sentence to translate to ASL</div>
+                    <div class="lbl">Type a sentence to translate to Sign Language</div>
                     <div class="inp-row">
                         <input id="txt-inp" type="text" placeholder="e.g.  hello my name" autocomplete="off"
                             autocorrect="off" spellcheck="false" />
@@ -920,17 +889,12 @@
                 <div class="pdots" id="pdots"></div>
             </div>
 
-        </div><!-- /panels -->
-    </div><!-- /app -->
+        </div>
+    </div>
 
     <div id="toast"></div>
 
     <script>
-        // =============================================================
-        //  ASLBridge Frontend — all 5 features
-        // =============================================================
-
-        // ── State ─────────────────────────────────────────────────
         let evtSource = null;
         let skeletonMode = false;
         let availVids = {};
@@ -938,11 +902,9 @@
         let vidIdx = 0;
         let lastSentence = [];
 
-        // Confidence wave ring buffer
         const WAVE_LEN = 60;
         const waveData = new Array(WAVE_LEN).fill(0);
 
-        // ── Mode switch ───────────────────────────────────────────
         function switchMode(m) {
             document.getElementById("tab1").classList.toggle("active", m === 1);
             document.getElementById("tab2").classList.toggle("active", m === 2);
@@ -951,7 +913,6 @@
             if (m === 2) fetchVids();
         }
 
-        // ── Skeleton toggle ────────────────────────────────────────
         function toggleSkeleton() {
             skeletonMode = !skeletonMode;
             document.getElementById("video-feed").classList.toggle("hidden", skeletonMode);
@@ -960,7 +921,6 @@
             document.getElementById("view-badge").textContent = skeletonMode ? "SKELETON" : "VIDEO";
         }
 
-        // ── SSE ───────────────────────────────────────────────────
         function connectSSE() {
             if (evtSource) evtSource.close();
             evtSource = new EventSource("/prediction_stream");
@@ -969,7 +929,6 @@
             evtSource.onerror = () => setConn("err", "RECONNECTING");
         }
 
-        // ── NLP processing indicator ──────────────────────────────
         function showNlpProcessing() {
             const ns = document.getElementById("nlp-status");
             ns.style.display = "flex";
@@ -983,28 +942,21 @@
             cb.innerHTML = `<strong>${escHtml(corrected)}</strong>`;
         }
 
-        // ── Handle prediction ─────────────────────────────────────
         function handlePred(d) {
-            // Handle async NLP update — lightweight event, just update corrected box
             if (d.nlp_update) {
                 showNlpDone(d.corrected_sentence || d.raw || "");
                 return;
             }
 
-            // Live label
             const ll = d.live_label ? `${d.live_label}  ${Math.round((d.confidence || 0) * 100)}%` : "— —";
             document.getElementById("live-label").textContent = ll;
 
-            // Spelling
             document.getElementById("spell-disp").textContent = d.current_word || "—";
 
-            // Sentence chips
             renderSentence(d.sentence, d.current_word);
 
-            // Show NLP spinner when a word is just confirmed (NLP running in background)
             if (d.confirmed_word) showNlpProcessing();
 
-            // Smart (NLP) sentence — cached value from last completed NLP run
             if (d.corrected_sentence) {
                 const cb = document.getElementById("corrected-box");
                 cb.innerHTML = `<strong>${escHtml(d.corrected_sentence)}</strong>` +
@@ -1013,24 +965,19 @@
                         : "");
             }
 
-            // Confidence wave
             waveData.push(d.confidence || 0);
             waveData.shift();
             drawWave();
 
-            // Top-3 bars
             if (d.top3 && d.top3.length) renderTop3(d.top3);
 
-            // History
             if (d.history && d.history.length) renderHistory(d.history);
 
-            // TTS on confirmed word
             if (d.confirmed_word) speak(d.confirmed_word);
 
             lastSentence = d.sentence || [];
         }
 
-        // ── Sentence chips ────────────────────────────────────────
         function renderSentence(words, partial) {
             const ov = document.getElementById("sent-overlay");
             ov.innerHTML = "";
@@ -1044,12 +991,11 @@
             }
         }
 
-        // ── Confidence wave canvas ────────────────────────────────
         function drawWave() {
             const canvas = document.getElementById("conf-wave");
             if (!canvas) return;
             const dpr = window.devicePixelRatio || 1;
-            const W = canvas.parentElement.clientWidth - 24; // padding
+            const W = canvas.parentElement.clientWidth - 24;
             const H = 44;
             canvas.width = W * dpr;
             canvas.height = H * dpr;
@@ -1059,7 +1005,6 @@
             ctx.scale(dpr, dpr);
             ctx.clearRect(0, 0, W, H);
 
-            // Gradient fill under wave
             const grad = ctx.createLinearGradient(0, 0, 0, H);
             grad.addColorStop(0, "rgba(0,229,200,.3)");
             grad.addColorStop(1, "rgba(0,229,200,0)");
@@ -1073,7 +1018,6 @@
             });
             ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
 
-            // Stroke
             ctx.strokeStyle = "#00e5c8";
             ctx.lineWidth = 1.5;
             ctx.beginPath();
@@ -1085,7 +1029,6 @@
             ctx.stroke();
         }
 
-        // ── Top-3 bars ────────────────────────────────────────────
         function renderTop3(top3) {
             const row = document.getElementById("top3-row");
             const items = row.querySelectorAll(".top3-item");
@@ -1097,11 +1040,9 @@
             });
         }
 
-        // ── History ───────────────────────────────────────────────
         function renderHistory(entries) {
             const list = document.getElementById("history-list");
             list.innerHTML = "";
-            // newest first
             [...entries].reverse().forEach(e => {
                 const div = document.createElement("div");
                 div.className = "h-entry";
@@ -1113,7 +1054,6 @@
             });
         }
 
-        // ── Controls ──────────────────────────────────────────────
         async function doFlush() {
             showNlpProcessing();
             const r = await fetch("/flush_spelling", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
@@ -1136,7 +1076,6 @@
             if (lastSentence.length) speak(lastSentence.join(" "));
         }
 
-        // ── TTS ───────────────────────────────────────────────────
         function speak(text) {
             if (!window.speechSynthesis) return;
             speechSynthesis.cancel();
@@ -1145,7 +1084,6 @@
             speechSynthesis.speak(u);
         }
 
-        // ── Mode 2: Text → ASL ────────────────────────────────────
         async function fetchVids() {
             try {
                 const r = await fetch("/videos");
@@ -1227,7 +1165,6 @@
             v.onerror = () => { toast(`Missing: ${tok.label}`, true); vidIdx++; playNext(); };
         }
 
-        // ── Utility ───────────────────────────────────────────────
         function setConn(cls, txt) {
             document.getElementById("cdot").className = `conn-dot ${cls}`;
             document.getElementById("conn-txt").textContent = txt;
@@ -1248,7 +1185,6 @@
             _tt = setTimeout(() => el.classList.remove("show"), 3000);
         }
 
-        // ── Init ──────────────────────────────────────────────────
         document.getElementById("txt-inp").addEventListener("keydown", e => {
             if (e.key === "Enter") startPlayback();
         });
